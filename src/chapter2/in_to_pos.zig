@@ -96,10 +96,8 @@ fn get_next(reader: *Io.Reader) compilerError!terminal {
 	const c = try reader.takeByte();
 
 	const next: terminal = switch(c) {
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' =>
-            @as(terminal, @enumFromInt(c - '0')),
-        '+' =>
-            .PLUS,
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' => @as(terminal, @enumFromInt(c - '0')),
+        '+' => .PLUS,
         '-' => .MINUS,
         '*' => .MUL,
         '/' => .DIV,
@@ -170,7 +168,9 @@ pub fn factor(reader: *Io.Reader, writer: *Io.Writer) compilerError!void {
 	}
 }
 
-pub fn S(reader: *Io.Reader, writer: *Io.Writer) !void {
+pub fn term(reader: *Io.Reader, writer: *Io.Writer) !void {
+	try factor(reader, writer);
+    // S
     while(true) {
         switch(lookahead) {
             .MUL => {
@@ -191,12 +191,9 @@ pub fn S(reader: *Io.Reader, writer: *Io.Writer) !void {
     }
 }
 
-pub fn term(reader: *Io.Reader, writer: *Io.Writer) !void {
-	try factor(reader, writer);
-	try S(reader, writer);
-}
-
-pub fn R(reader: *Io.Reader, writer: *Io.Writer) !void {
+pub fn expr(reader: *Io.Reader, writer: *Io.Writer) !void {
+    try term(reader, writer);
+    // R
     while(true) {
         switch(lookahead) {
             .PLUS => {
@@ -215,11 +212,6 @@ pub fn R(reader: *Io.Reader, writer: *Io.Writer) !void {
             },
         }
     }
-}
-
-pub fn expr(reader: *Io.Reader, writer: *Io.Writer) !void {
-    try term(reader, writer);
-    try R(reader, writer);
 }
 
 pub fn main(init: std.process.Init) !void {
