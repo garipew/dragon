@@ -171,23 +171,24 @@ pub fn factor(reader: *Io.Reader, writer: *Io.Writer) compilerError!void {
 }
 
 pub fn S(reader: *Io.Reader, writer: *Io.Writer) !void {
-	switch(lookahead) {
-        .MUL => {
-            try match(reader, .MUL);
-            try factor(reader, writer);
-            try writer.print("*", .{});
-            try S(reader, writer);
-        },
-        .DIV => {
-            try match(reader, .DIV);
-            try factor(reader, writer);
-            try writer.print("/", .{});
-            try S(reader, writer);
-        },
-        else => {
-            // Empty production is valid
-        },
-	}
+    while(true) {
+        switch(lookahead) {
+            .MUL => {
+                try match(reader, .MUL);
+                try factor(reader, writer);
+                try writer.print("*", .{});
+            },
+            .DIV => {
+                try match(reader, .DIV);
+                try factor(reader, writer);
+                try writer.print("/", .{});
+            },
+            else => {
+                // Empty production is valid
+                return;
+            },
+        }
+    }
 }
 
 pub fn term(reader: *Io.Reader, writer: *Io.Writer) !void {
@@ -196,23 +197,24 @@ pub fn term(reader: *Io.Reader, writer: *Io.Writer) !void {
 }
 
 pub fn R(reader: *Io.Reader, writer: *Io.Writer) !void {
-	switch(lookahead) {
-        .PLUS => {
-            try match(reader, .PLUS);
-            try term(reader, writer);
-            try writer.print("+", .{});
-            try R(reader, writer);
-        },
-        .MINUS => {
-            try match(reader, .MINUS);
-            try term(reader, writer);
-            try writer.print("-", .{});
-            try R(reader, writer);
-        },
-        else => {
-            // Empty production is valid
-        },
-	}
+    while(true) {
+        switch(lookahead) {
+            .PLUS => {
+                try match(reader, .PLUS);
+                try term(reader, writer);
+                try writer.print("+", .{});
+            },
+            .MINUS => {
+                try match(reader, .MINUS);
+                try term(reader, writer);
+                try writer.print("-", .{});
+            },
+            else => {
+                // Empty production is valid
+                return;
+            },
+        }
+    }
 }
 
 pub fn expr(reader: *Io.Reader, writer: *Io.Writer) !void {
