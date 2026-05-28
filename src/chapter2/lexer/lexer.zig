@@ -6,12 +6,10 @@ const std = @import("std");
 const token = @import("token.zig");
 
 pub const Lexer = struct {
-    line_counter: u64,
     peek: u8,
 
     pub fn init() Lexer {
         return Lexer{
-            .line_counter = 0,
             .peek = ' ',
         };
     }
@@ -41,7 +39,7 @@ pub const Lexer = struct {
     fn readOperator(self: *Lexer, reader: *std.Io.Reader) !token.Operator {
         const first = self.peek;
         self.peek = try reader.takeByte();
-        const operator = switch(first) {
+        const op = try switch(first) {
             '+' => token.Operator.plus        ,
             '-' => token.Operator.minus       ,
             '*' => token.Operator.mult        ,
@@ -53,12 +51,11 @@ pub const Lexer = struct {
             ';' => token.Operator.end_stmt    ,
             else => error.UnknownOperator     ,
         };
-        const op = try operator;
-        if(self.peek == '=' and @intFromEnum(op) <= @intFromEnum(token.Operator.not)) {
+        if(self.peek == '=' and @intFromEnum(op) < @intFromEnum(token.Operator.plus_assign)) {
             self.peek = ' ';
             return @enumFromInt(@intFromEnum(op) + @intFromEnum(token.Operator.plus_assign));
         }
-        return operator;
+        return op;
     }
 
     pub fn scan(self: *Lexer, allocator: std.mem.Allocator, reader: *std.Io.Reader) !token.Token {
