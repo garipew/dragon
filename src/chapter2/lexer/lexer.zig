@@ -19,6 +19,31 @@ pub const Lexer = struct {
             self.peek = try reader.takeByte();
         }
     }
+
+    fn skipComment(self: *Lexer, reader: *std.Io.Reader) !bool {
+        if(self.peek != '/') {
+            return false;
+        }
+        while(self.peek != '\n') {
+            self.peek = try reader.takeByte();
+        }
+        return true;
+    }
+
+    fn skipCommentBlock(self: *Lexer, reader: *std.Io.Reader) !bool {
+        if(self.peek != '*') {
+            return false;
+        }
+        var prev: u8 = self.peek;
+        self.peek = try reader.takeByte();
+        while(prev != '*' or self.peek != '/') {
+            prev = self.peek;
+            self.peek = try reader.takeByte();
+        }
+        self.peek = ' ';
+        return true;
+    }
+
     fn readNumber(self: *Lexer, reader: *std.Io.Reader) !u64 {
         var value: u64 = 0; 
         while(std.ascii.isDigit(self.peek)) : (self.peek = try reader.takeByte()) {
@@ -59,15 +84,23 @@ pub const Lexer = struct {
     }
 
     pub fn scan(self: *Lexer, allocator: std.mem.Allocator, reader: *std.Io.Reader) !token.Token {
-        try self.skipWhitespace(reader);
-        if(std.ascii.isDigit(self.peek)) {
-            const num = try self.readNumber(reader);
-            return token.Token{ .num = num, };
+        var t: token.Token = undefined;
+        while(true) {
+            try self.skipWhitespace(reader);
+            if(std.ascii.isDigit(self.peek)) {
+                return token.Token{ .num = try self.readNumber(reader), };
+            }
+            if(std.ascii.isAlphabetic(self.peek)) {
+                return token.Token{ .id = try self.readId(allocator, reader), };
+            }
+            t = token.Token{ .op = try self.readOperator(reader), };
+            if(t.op != token.Operator.div) {
+                break;
+            }
+            if(!try self.skipComment(reader) and !try self.skipCommentBlock(reader)) {
+                break;
+            }
         }
-        if(std.ascii.isAlphabetic(self.peek)) {
-            return token.Token{ .id = try self.readId(allocator, reader), };
-        }
-        const t = token.Token{ .op = try self.readOperator(reader), };
         return t;
     }
 };
